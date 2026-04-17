@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PratoMiMuovo – Incidenti Stradali 2017–2023</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Arial,sans-serif;background:#0f1117;color:#e0e0e0;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+    /* HEADER */
+    header{background:#1a1d27;border-bottom:2px solid #2a6ebb;padding:10px 18px;display:flex;align-items:center;gap:14px;flex-shrink:0;flex-wrap:wrap}
+    header h1{font-size:1.1rem;color:#fff;white-space:nowrap}
+    header .sub{font-size:0.78rem;color:#778899}
+    .src-link{background:#2a6ebb22;border:1px solid #2a6ebb;color:#5aacff;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;text-decoration:none;white-space:nowrap}
+    .src-link:hover{background:#2a6ebb44}
+
+    /* YEAR FILTER BAR */
+    .year-bar{background:#13161f;border-bottom:1px solid #2a3040;padding:7px 18px;display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap}
+    .year-bar span{font-size:0.75rem;color:#778899;margin-right:4px}
+    .yr-btn{background:#1a1d27;border:1px solid #2a3040;color:#aab;padding:4px 12px;border-radius:14px;cursor:pointer;font-size:0.78rem;transition:all .15s}
+    .yr-btn:hover{border-color:#5aacff;color:#5aacff}
+    .yr-btn.active{background:#2a6ebb;border-color:#2a6ebb;color:#fff;font-weight:700}
+
+    /* MAIN LAYOUT */
+    .main{display:flex;flex:1;overflow:hidden}
+    #map{flex:1}
+
+    /* SIDEBAR */
+    .sidebar{width:300px;background:#1a1d27;border-left:1px solid #2a3040;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column}
+    .sb-section{padding:12px 14px;border-bottom:1px solid #2a3040}
+    .sb-section h3{font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:#5aacff;margin-bottom:10px}
+
+    /* KPI cards */
+    .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+    .kpi{background:#0f1117;border:1px solid #2a3040;border-radius:6px;padding:8px;text-align:center}
+    .kpi .v{font-size:1.4rem;font-weight:700;color:#fff}
+    .kpi .l{font-size:0.68rem;color:#556677;margin-top:1px}
+    .kpi.red .v{color:#ff5555}
+    .kpi.ora .v{color:#ffdd44;font-size:1rem}
+
+    /* MINI TREND CHART */
+    #trendChart{width:100%;height:80px;margin-top:4px}
+
+    /* LEGEND */
+    .leg-row{display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:0.79rem;color:#ccc}
+    .leg-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:2px solid rgba(255,255,255,0.25)}
+
+    /* STREET LIST */
+    .street-list{padding:0 14px 12px;flex:1}
+    .st-item{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1e2230;font-size:0.79rem;cursor:pointer;transition:.12s}
+    .st-item:hover{background:#1e2230;margin:0 -14px;padding:6px 14px}
+    .st-name{color:#dde;flex:1;padding-right:6px}
+    .st-right{display:flex;align-items:center;gap:4px}
+    .bar{height:7px;border-radius:2px;min-width:3px}
+    .bar-num{font-size:0.75rem;font-weight:700;color:#5aacff;min-width:20px;text-align:right}
+    .skull{font-size:0.8rem}
+
+    /* FOOTER NOTE */
+    .note{padding:9px 14px;font-size:0.69rem;color:#445;line-height:1.5;border-top:1px solid #2a3040}
+
+    /* POPUP */
+    .leaflet-popup-content-wrapper{background:#1a1d27!important;border:1px solid #2a6ebb!important;color:#e0e0e0!important;border-radius:8px!important;box-shadow:0 4px 20px rgba(0,0,0,.6)!important}
+    .leaflet-popup-tip{background:#1a1d27!important}
+    .pop-title{font-size:.95rem;font-weight:700;color:#fff;margin-bottom:7px}
+    .pop-row{display:flex;justify-content:space-between;font-size:.82rem;margin:2px 0}
+    .pop-label{color:#778899}
+    .pop-val{font-weight:700;color:#fff}
+    .pop-val.blu{color:#5aacff}
+    .pop-val.ora{color:#ff9944}
+    .pop-val.red{color:#ff5555}
+    .pop-sep{border-top:1px solid #2a3040;margin:7px 0}
+    .pop-trend{display:flex;gap:3px;align-items:flex-end;height:36px;margin-top:4px}
+    .pop-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1}
+    .pop-bar{background:#2a6ebb;border-radius:2px 2px 0 0;width:100%;min-height:2px;transition:.2s}
+    .pop-bar.has-death{background:#ff5555}
+    .pop-yr{font-size:0.58rem;color:#557}
+    .pop-feat{margin-top:7px;padding-top:6px;border-top:1px solid #2a3040;font-size:.73rem;color:#6699cc;font-style:italic}
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🗺️ PratoMiMuovo — Incidenti Stradali 2017–2023</h1>
+    <div class="sub">Fonte: Polizia Municipale di Prato • 100 strade con ≥ 5 incidenti/anno</div>
+  </div>
+  <a class="src-link" href="https://statistica.comune.prato.it/it/statistica/aree-tematiche/incidenti-stradali/pagina2409.html" target="_blank">📂 Dati ufficiali Comune di Prato ↗</a>
+</header>
+
+<div class="year-bar">
+  <span>Anno:</span>
+  <button class="yr-btn" data-year="2017">2017</button>
+  <button class="yr-btn" data-year="2018">2018</button>
+  <button class="yr-btn" data-year="2019">2019</button>
+  <button class="yr-btn" data-year="2020">2020</button>
+  <button class="yr-btn" data-year="2021">2021</button>
+  <button class="yr-btn" data-year="2022">2022</button>
+  <button class="yr-btn" data-year="2023">2023</button>
+  <button class="yr-btn active" data-year="all">Tutti (2017–2023)</button>
+</div>
+
+<div class="main">
+  <div id="map"></div>
+  <div class="sidebar">
+
+    <div class="sb-section">
+      <h3>Riepilogo — <span id="kpiLabel">2017–2023</span></h3>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="v" id="kpiInc">4.000</div><div class="l">Incidenti</div></div>
+        <div class="kpi"><div class="v" id="kpiFer">4.853</div><div class="l">Feriti</div></div>
+        <div class="kpi red"><div class="v" id="kpiMor">23</div><div class="l">Morti</div></div>
+        <div class="kpi ora"><div class="v">17–18</div><div class="l">Ora più critica</div></div>
+      </div>
+    </div>
+
+    <div class="sb-section">
+      <h3>Trend incidenti per anno</h3>
+      <canvas id="trendChart"></canvas>
+    </div>
+
+    <div class="sb-section">
+      <h3>Legenda</h3>
+      <div class="leg-row"><div class="leg-dot" style="background:#ff1111"></div>Critico (≥ 30 incidenti)</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#ff7700"></div>Alto (15–29)</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#ffdd00"></div>Medio (8–14)</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#44aaff"></div>Moderato (&lt; 8)</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#fff;border-color:#ff3333"></div>Presenza di morti</div>
+    </div>
+
+    <div class="sb-section">
+      <h3>Strade per incidenti — <span id="listLabel">totale 2017–2023</span></h3>
+    </div>
+    <div class="street-list" id="streetList"></div>
+
+    <div class="note">
+      Clicca un marker per dettagli anno per anno.<br>
+      💡 Le strade con più incidenti sono i candidati primari per i semafori adattivi e la Dilemma Zone Protection di PratoMiMuovo.
+    </div>
+  </div>
+</div>
+
+<script>
+const RAW = [{"name":"Piazza Giovanni Ciardi","lat":43.8856208,"lon":11.0977067,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":6,"fer":8,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":6,"total_fer":8,"total_mor":0},{"name":"Piazza Mercatale","lat":43.8802496,"lon":11.1024622,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":5,"fer":6,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":5,"total_fer":6,"total_mor":0},{"name":"Piazza San Marco","lat":43.8775193,"lon":11.102027,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":5,"fer":5,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":5,"total_fer":5,"total_mor":0},{"name":"Via Adriano Zarini","lat":43.8682269,"lon":11.1043665,"years":{"2017":{"inc":7,"fer":8,"mor":0},"2018":{"inc":15,"fer":16,"mor":0},"2019":{"inc":16,"fer":18,"mor":0},"2020":{"inc":6,"fer":6,"mor":0},"2021":{"inc":8,"fer":8,"mor":0},"2022":{"inc":10,"fer":11,"mor":0},"2023":{"inc":9,"fer":10,"mor":0}},"total_inc":71,"total_fer":77,"total_mor":0},{"name":"Via Aldo Moro","lat":43.8414093,"lon":11.1104356,"years":{"2017":{"inc":7,"fer":7,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":8,"fer":9,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":6,"fer":6,"mor":0}},"total_inc":21,"total_fer":22,"total_mor":0},{"name":"Via Alessandro Lazzerini","lat":43.8737144,"lon":11.092624,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":5,"fer":7,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":5,"total_fer":7,"total_mor":0},{"name":"Via Antonio Marini","lat":43.8850093,"lon":11.0906311,"years":{"2017":{"inc":9,"fer":15,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":7,"fer":8,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":16,"total_fer":23,"total_mor":0},{"name":"Via Antonio Vivaldi","lat":43.8880176,"lon":11.072092,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":7,"fer":8,"mor":0},"2023":{"inc":5,"fer":6,"mor":0}},"total_inc":12,"total_fer":14,"total_mor":0},{"name":"Via Arcivescovo Antonio Martini","lat":43.8791481,"lon":11.104395,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":5,"fer":6,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":5,"total_fer":6,"total_mor":0},{"name":"Via Attilio Ciardi","lat":43.8875013,"lon":11.077068,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":5,"fer":6,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":5,"total_fer":6,"total_mor":0},{"name":"Via Bologna","lat":43.9105288,"lon":11.1190697,"years":{"2017":{"inc":21,"fer":32,"mor":0},"2018":{"inc":21,"fer":26,"mor":0},"2019":{"inc":15,"fer":20,"mor":0},"2020":{"inc":9,"fer":14,"mor":0},"2021":{"inc":14,"fer":18,"mor":0},"2022":{"inc":11,"fer":13,"mor":0},"2023":{"inc":12,"fer":18,"mor":0}},"total_inc":103,"total_fer":141,"total_mor":0},{"name":"Via Bruges","lat":43.8494715,"lon":11.1101649,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":10,"fer":13,"mor":0},"2019":{"inc":6,"fer":10,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":7,"fer":9,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":23,"total_fer":32,"total_mor":0},{"name":"Via Carlo Marx","lat":43.8707,"lon":11.0921986,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":10,"fer":11,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":7,"fer":7,"mor":0}},"total_inc":17,"total_fer":18,"total_mor":0},{"name":"Via Castruccio","lat":43.866383,"lon":11.0317713,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":6,"fer":7,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":6,"total_fer":7,"total_mor":0},{"name":"Via Cava","lat":43.8642806,"lon":11.066822,"years":{"2017":{"inc":6,"fer":6,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":6,"fer":6,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":6,"fer":8,"mor":0},"2023":{"inc":7,"fer":7,"mor":0}},"total_inc":25,"total_fer":27,"total_mor":0},{"name":"Via Cavour","lat":43.8828222,"lon":11.0914419,"years":{"2017":{"inc":13,"fer":17,"mor":0},"2018":{"inc":15,"fer":22,"mor":0},"2019":{"inc":9,"fer":14,"mor":0},"2020":{"inc":5,"fer":7,"mor":0},"2021":{"inc":5,"fer":7,"mor":0},"2022":{"inc":7,"fer":10,"mor":0},"2023":{"inc":5,"fer":5,"mor":0}},"total_inc":59,"total_fer":82,"total_mor":0},{"name":"Via Cesare Battisti","lat":43.8876182,"lon":11.0958176,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":5,"fer":4,"mor":1},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":5,"total_fer":4,"total_mor":1},{"name":"Via Chemnitz","lat":43.852917,"lon":11.1145465,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":5,"fer":7,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":5,"total_fer":7,"total_mor":0},{"name":"Via Curtatone","lat":43.8835872,"lon":11.0919595,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":5,"fer":6,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":7,"fer":9,"mor":0},"2022":{"inc":8,"fer":9,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":20,"total_fer":24,"total_mor":0},{"name":"Via Dei Ciliani","lat":43.8899898,"lon":11.0963604,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":7,"fer":8,"mor":0},"2019":{"inc":10,"fer":17,"mor":0},"2020":{"inc":5,"fer":6,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":22,"total_fer":31,"total_mor":0},{"name":"Via Dei Fossi","lat":43.8580974,"lon":11.0638375,"years":{"2017":{"inc":11,"fer":15,"mor":0},"2018":{"inc":11,"fer":13,"mor":0},"2019":{"inc":9,"fer":10,"mor":0},"2020":{"inc":6,"fer":6,"mor":0},"2021":{"inc":10,"fer":13,"mor":0},"2022":{"inc":10,"fer":11,"mor":0},"2023":{"inc":7,"fer":7,"mor":1}},"total_inc":64,"total_fer":75,"total_mor":1},{"name":"Via Dei Gobbi","lat":43.8921023,"lon":11.0817778,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":5,"fer":7,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":7,"fer":7,"mor":0},"2022":{"inc":8,"fer":13,"mor":0},"2023":{"inc":7,"fer":7,"mor":0}},"total_inc":27,"total_fer":34,"total_mor":0},{"name":"Via Dei Trebbi","lat":43.8844129,"lon":11.0426942,"years":{"2017":{"inc":6,"fer":8,"mor":0},"2018":{"inc":9,"fer":12,"mor":0},"2019":{"inc":8,"fer":9,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":8,"fer":11,"mor":0},"2022":{"inc":7,"fer":13,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":38,"total_fer":53,"total_mor":0},{"name":"Via Del Campaccio","lat":43.8924344,"lon":11.0786931,"years":{"2017":{"inc":6,"fer":10,"mor":0},"2018":{"inc":6,"fer":9,"mor":0},"2019":{"inc":6,"fer":7,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":18,"total_fer":26,"total_mor":0},{"name":"Via Del Castagno","lat":43.8677104,"lon":11.0951018,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":5,"fer":6,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":6,"fer":11,"mor":0}},"total_inc":11,"total_fer":17,"total_mor":0},{"name":"Via Del Cilianuzzo","lat":43.8965843,"lon":11.0953704,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":5,"fer":6,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":5,"total_fer":6,"total_mor":0},{"name":"Via Del Ferro","lat":43.8496643,"lon":11.0862094,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":6,"fer":7,"mor":0},"2019":{"inc":10,"fer":15,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":6,"fer":8,"mor":0},"2023":{"inc":5,"fer":5,"mor":0}},"total_inc":27,"total_fer":35,"total_mor":0},{"name":"Via Del Guado A Narnali","lat":43.8987158,"lon":11.0647721,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":6,"fer":7,"mor":0}},"total_inc":6,"total_fer":7,"total_mor":0},{"name":"Via Del Malfante","lat":43.8720078,"lon":11.0767707,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":5,"fer":12,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":5,"fer":8,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":10,"total_fer":20,"total_mor":0},{"name":"Via Del Molinuzzo","lat":43.8569604,"lon":11.0667722,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":6,"fer":6,"mor":0},"2019":{"inc":6,"fer":6,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":5,"fer":5,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":17,"total_fer":17,"total_mor":0},{"name":"Via Del Purgatorio","lat":43.8724752,"lon":11.085129,"years":{"2017":{"inc":9,"fer":14,"mor":0},"2018":{"inc":11,"fer":12,"mor":0},"2019":{"inc":7,"fer":8,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":6,"fer":6,"mor":0},"2022":{"inc":7,"fer":7,"mor":0},"2023":{"inc":5,"fer":5,"mor":0}},"total_inc":45,"total_fer":52,"total_mor":0},{"name":"Via Del Romito","lat":43.874501,"lon":11.0983287,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":5,"fer":8,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":8,"fer":8,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":13,"total_fer":16,"total_mor":0},{"name":"Via Dell'Alberaccio","lat":43.887935,"lon":11.059385,"years":{"2017":{"inc":6,"fer":9,"mor":0},"2018":{"inc":5,"fer":9,"mor":0},"2019":{"inc":6,"fer":7,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":9,"fer":10,"mor":0},"2022":{"inc":7,"fer":8,"mor":0},"2023":{"inc":6,"fer":7,"mor":0}},"total_inc":39,"total_fer":50,"total_mor":0},{"name":"Via Dell'Ippodromo","lat":43.8696275,"lon":11.0847077,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":6,"fer":8,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":6,"total_fer":8,"total_mor":0},{"name":"Via Della Gora Del Pero","lat":43.8639604,"lon":11.0642794,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":6,"fer":6,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":5,"fer":6,"mor":0}},"total_inc":11,"total_fer":12,"total_mor":0},{"name":"Via Della Mimosa","lat":43.8707763,"lon":11.0773876,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":5,"fer":11,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":5,"total_fer":11,"total_mor":0},{"name":"Via Della Pace","lat":43.895366,"lon":11.0722856,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":5,"fer":6,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":5,"total_fer":6,"total_mor":0},{"name":"Via Delle Colombaie","lat":43.8522815,"lon":11.0505452,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":6,"fer":11,"mor":0},"2019":{"inc":8,"fer":18,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":14,"total_fer":29,"total_mor":0},{"name":"Via Delle Fonti","lat":43.8426603,"lon":11.1081767,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":7,"fer":9,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":6,"fer":6,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":13,"total_fer":15,"total_mor":0},{"name":"Via Di Baciacavallo","lat":43.8525074,"lon":11.0786984,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":5,"fer":6,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":5,"total_fer":6,"total_mor":0},{"name":"Via Di Cantagallo","lat":43.9250104,"lon":11.0923852,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":5,"fer":8,"mor":0},"2019":{"inc":9,"fer":11,"mor":0},"2020":{"inc":7,"fer":10,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":5,"fer":6,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":26,"total_fer":35,"total_mor":0},{"name":"Via Di Galceti","lat":43.9083236,"lon":11.0848616,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":9,"fer":11,"mor":0},"2019":{"inc":8,"fer":7,"mor":1},"2020":{"inc":6,"fer":6,"mor":0},"2021":{"inc":5,"fer":7,"mor":0},"2022":{"inc":7,"fer":6,"mor":1},"2023":{"inc":7,"fer":7,"mor":0}},"total_inc":42,"total_fer":44,"total_mor":2},{"name":"Via Di Gello","lat":43.871735,"lon":11.0801584,"years":{"2017":{"inc":11,"fer":15,"mor":0},"2018":{"inc":9,"fer":10,"mor":0},"2019":{"inc":5,"fer":6,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":6,"fer":6,"mor":0},"2022":{"inc":6,"fer":10,"mor":0},"2023":{"inc":6,"fer":7,"mor":0}},"total_inc":43,"total_fer":54,"total_mor":0},{"name":"Via Di Maliseti","lat":43.8995693,"lon":11.0727075,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":7,"fer":7,"mor":0},"2020":{"inc":5,"fer":6,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":8,"fer":10,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":20,"total_fer":23,"total_mor":0},{"name":"Via Di Reggiana","lat":43.8751914,"lon":11.0700013,"years":{"2017":{"inc":8,"fer":10,"mor":0},"2018":{"inc":11,"fer":12,"mor":0},"2019":{"inc":16,"fer":18,"mor":0},"2020":{"inc":5,"fer":6,"mor":0},"2021":{"inc":6,"fer":9,"mor":0},"2022":{"inc":17,"fer":20,"mor":0},"2023":{"inc":13,"fer":15,"mor":0}},"total_inc":76,"total_fer":90,"total_mor":0},{"name":"Via Enrico Berlinguer","lat":43.8481547,"lon":11.1064549,"years":{"2017":{"inc":6,"fer":6,"mor":0},"2018":{"inc":9,"fer":11,"mor":0},"2019":{"inc":8,"fer":10,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":7,"fer":7,"mor":0},"2022":{"inc":9,"fer":9,"mor":0},"2023":{"inc":13,"fer":14,"mor":0}},"total_inc":52,"total_fer":57,"total_mor":0},{"name":"Via Erbosa","lat":43.8874016,"lon":11.0880954,"years":{"2017":{"inc":6,"fer":8,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":5,"fer":6,"mor":0}},"total_inc":11,"total_fer":14,"total_mor":0},{"name":"Via Ettore Strobino","lat":43.8461219,"lon":11.1116696,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":6,"fer":11,"mor":0},"2023":{"inc":5,"fer":7,"mor":0}},"total_inc":11,"total_fer":18,"total_mor":0},{"name":"Via Fabio Filzi","lat":43.8876169,"lon":11.0838161,"years":{"2017":{"inc":23,"fer":31,"mor":0},"2018":{"inc":17,"fer":20,"mor":0},"2019":{"inc":24,"fer":30,"mor":0},"2020":{"inc":17,"fer":19,"mor":0},"2021":{"inc":13,"fer":16,"mor":0},"2022":{"inc":18,"fer":27,"mor":0},"2023":{"inc":18,"fer":20,"mor":0}},"total_inc":130,"total_fer":163,"total_mor":0},{"name":"Via Federigo Melis","lat":43.8994133,"lon":11.0737329,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":5,"fer":6,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":8,"fer":11,"mor":0}},"total_inc":13,"total_fer":17,"total_mor":0},{"name":"Via Filippo Strozzi","lat":43.8883128,"lon":11.0901551,"years":{"2017":{"inc":9,"fer":10,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":8,"fer":7,"mor":1},"2020":{"inc":7,"fer":7,"mor":0},"2021":{"inc":5,"fer":5,"mor":0},"2022":{"inc":7,"fer":9,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":36,"total_fer":38,"total_mor":1},{"name":"Via Fiorentina","lat":43.8654152,"lon":11.0943306,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":9,"fer":11,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":7,"fer":7,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":13,"fer":14,"mor":0}},"total_inc":29,"total_fer":32,"total_mor":0},{"name":"Via Firenze","lat":43.8602649,"lon":11.1392232,"years":{"2017":{"inc":25,"fer":30,"mor":1},"2018":{"inc":32,"fer":36,"mor":0},"2019":{"inc":21,"fer":25,"mor":0},"2020":{"inc":16,"fer":16,"mor":1},"2021":{"inc":16,"fer":16,"mor":0},"2022":{"inc":15,"fer":15,"mor":0},"2023":{"inc":18,"fer":19,"mor":0}},"total_inc":143,"total_fer":157,"total_mor":2},{"name":"Via Fonda Di Mezzana","lat":43.8478377,"lon":11.0997334,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":5,"fer":6,"mor":0}},"total_inc":5,"total_fer":6,"total_mor":0},{"name":"Via Francesco Ferrucci","lat":43.8656828,"lon":11.1128103,"years":{"2017":{"inc":15,"fer":17,"mor":0},"2018":{"inc":27,"fer":31,"mor":1},"2019":{"inc":21,"fer":25,"mor":0},"2020":{"inc":10,"fer":12,"mor":0},"2021":{"inc":13,"fer":14,"mor":1},"2022":{"inc":17,"fer":20,"mor":0},"2023":{"inc":16,"fer":16,"mor":0}},"total_inc":119,"total_fer":135,"total_mor":2},{"name":"Via Francesco Pacchiani","lat":43.873821,"lon":11.0929345,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":5,"fer":7,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":5,"total_fer":7,"total_mor":0},{"name":"Via Frascati","lat":43.8771261,"lon":11.0971887,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":5,"fer":5,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":5,"total_fer":5,"total_mor":0},{"name":"Via Galcianese","lat":43.8813512,"lon":11.0702766,"years":{"2017":{"inc":27,"fer":29,"mor":0},"2018":{"inc":19,"fer":23,"mor":0},"2019":{"inc":24,"fer":29,"mor":0},"2020":{"inc":8,"fer":11,"mor":0},"2021":{"inc":14,"fer":16,"mor":0},"2022":{"inc":31,"fer":32,"mor":0},"2023":{"inc":16,"fer":17,"mor":0}},"total_inc":139,"total_fer":157,"total_mor":0},{"name":"Via Galileo Ferraris","lat":43.8611466,"lon":11.0950658,"years":{"2017":{"inc":6,"fer":6,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":7,"fer":10,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":7,"fer":7,"mor":0}},"total_inc":20,"total_fer":23,"total_mor":0},{"name":"Via Giacomo Matteotti","lat":43.8805283,"lon":11.1043204,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":5,"fer":7,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":6,"fer":8,"mor":0},"2021":{"inc":5,"fer":7,"mor":0},"2022":{"inc":6,"fer":9,"mor":0},"2023":{"inc":5,"fer":6,"mor":0}},"total_inc":27,"total_fer":37,"total_mor":0},{"name":"Via Giulio Braga","lat":43.8486533,"lon":11.0521063,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":6,"fer":8,"mor":0}},"total_inc":6,"total_fer":8,"total_mor":0},{"name":"Via Giuseppe Catani","lat":43.8640873,"lon":11.1114412,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":5,"fer":5,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":5,"fer":4,"mor":1},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":5,"fer":5,"mor":0}},"total_inc":15,"total_fer":14,"total_mor":1},{"name":"Via Giuseppe Valentini","lat":43.8715588,"lon":11.0991568,"years":{"2017":{"inc":22,"fer":26,"mor":0},"2018":{"inc":22,"fer":27,"mor":0},"2019":{"inc":15,"fer":17,"mor":0},"2020":{"inc":8,"fer":8,"mor":0},"2021":{"inc":15,"fer":16,"mor":0},"2022":{"inc":12,"fer":12,"mor":0},"2023":{"inc":10,"fer":11,"mor":0}},"total_inc":104,"total_fer":117,"total_mor":0},{"name":"Via Guilianti","lat":43.863211,"lon":11.0191633,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":7,"fer":11,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":7,"total_fer":11,"total_mor":0},{"name":"Via Jean Monnet","lat":43.8763928,"lon":11.0853278,"years":{"2017":{"inc":9,"fer":10,"mor":0},"2018":{"inc":9,"fer":10,"mor":2},"2019":{"inc":5,"fer":5,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":23,"total_fer":25,"total_mor":2},{"name":"Via Liliana Rossi","lat":43.8960743,"lon":11.0873298,"years":{"2017":{"inc":9,"fer":12,"mor":0},"2018":{"inc":5,"fer":7,"mor":0},"2019":{"inc":6,"fer":6,"mor":0},"2020":{"inc":6,"fer":6,"mor":0},"2021":{"inc":12,"fer":15,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":9,"fer":11,"mor":0}},"total_inc":47,"total_fer":57,"total_mor":0},{"name":"Via Marco Roncioni","lat":43.8743167,"lon":11.0879033,"years":{"2017":{"inc":15,"fer":18,"mor":0},"2018":{"inc":10,"fer":11,"mor":0},"2019":{"inc":8,"fer":11,"mor":0},"2020":{"inc":6,"fer":8,"mor":0},"2021":{"inc":7,"fer":8,"mor":0},"2022":{"inc":12,"fer":16,"mor":0},"2023":{"inc":12,"fer":17,"mor":0}},"total_inc":70,"total_fer":89,"total_mor":0},{"name":"Via Medaglie D'Oro","lat":43.8930664,"lon":11.0965614,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":5,"fer":5,"mor":0}},"total_inc":5,"total_fer":5,"total_mor":0},{"name":"Via Montalese","lat":43.8919599,"lon":11.0860654,"years":{"2017":{"inc":12,"fer":17,"mor":0},"2018":{"inc":8,"fer":9,"mor":0},"2019":{"inc":10,"fer":14,"mor":0},"2020":{"inc":9,"fer":10,"mor":0},"2021":{"inc":10,"fer":11,"mor":0},"2022":{"inc":13,"fer":14,"mor":0},"2023":{"inc":6,"fer":7,"mor":0}},"total_inc":68,"total_fer":82,"total_mor":0},{"name":"Via Nicolo' Machiavelli","lat":43.8821337,"lon":11.108995,"years":{"2017":{"inc":9,"fer":8,"mor":1},"2018":{"inc":5,"fer":6,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":7,"fer":9,"mor":0},"2021":{"inc":5,"fer":8,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":6,"fer":8,"mor":0}},"total_inc":32,"total_fer":39,"total_mor":1},{"name":"Via Paronese","lat":43.8603074,"lon":11.0596789,"years":{"2017":{"inc":26,"fer":29,"mor":0},"2018":{"inc":23,"fer":30,"mor":0},"2019":{"inc":19,"fer":25,"mor":0},"2020":{"inc":13,"fer":14,"mor":0},"2021":{"inc":18,"fer":20,"mor":0},"2022":{"inc":26,"fer":28,"mor":0},"2023":{"inc":29,"fer":30,"mor":0}},"total_inc":154,"total_fer":176,"total_mor":0},{"name":"Via Per Iolo","lat":43.8687455,"lon":11.0523875,"years":{"2017":{"inc":7,"fer":11,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":5,"fer":5,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":12,"total_fer":16,"total_mor":0},{"name":"Via Piemonte","lat":43.8575448,"lon":11.049668,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":7,"fer":11,"mor":0},"2019":{"inc":8,"fer":9,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":5,"fer":6,"mor":0},"2022":{"inc":6,"fer":7,"mor":0},"2023":{"inc":7,"fer":7,"mor":0}},"total_inc":33,"total_fer":40,"total_mor":0},{"name":"Via Pietro Nenni","lat":43.8731583,"lon":11.082089,"years":{"2017":{"inc":10,"fer":12,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":7,"fer":10,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":6,"fer":7,"mor":0},"2023":{"inc":5,"fer":5,"mor":0}},"total_inc":28,"total_fer":34,"total_mor":0},{"name":"Via Pistoiese","lat":43.8910157,"lon":11.0749227,"years":{"2017":{"inc":30,"fer":37,"mor":0},"2018":{"inc":25,"fer":39,"mor":1},"2019":{"inc":38,"fer":44,"mor":0},"2020":{"inc":19,"fer":21,"mor":0},"2021":{"inc":26,"fer":26,"mor":0},"2022":{"inc":31,"fer":34,"mor":0},"2023":{"inc":27,"fer":28,"mor":0}},"total_inc":196,"total_fer":229,"total_mor":1},{"name":"Via Pollative","lat":43.8646502,"lon":11.0596592,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":6,"fer":9,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":6,"total_fer":9,"total_mor":0},{"name":"Via Pomeria","lat":43.8759105,"lon":11.0977386,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":7,"fer":7,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":8,"fer":8,"mor":0},"2021":{"inc":9,"fer":10,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":24,"total_fer":25,"total_mor":0},{"name":"Via Roma","lat":43.8613073,"lon":11.0813617,"years":{"2017":{"inc":32,"fer":36,"mor":1},"2018":{"inc":30,"fer":32,"mor":0},"2019":{"inc":37,"fer":41,"mor":1},"2020":{"inc":23,"fer":25,"mor":0},"2021":{"inc":35,"fer":35,"mor":1},"2022":{"inc":29,"fer":33,"mor":1},"2023":{"inc":39,"fer":44,"mor":0}},"total_inc":225,"total_fer":246,"total_mor":4},{"name":"Via San Giusto","lat":43.8741708,"lon":11.077061,"years":{"2017":{"inc":8,"fer":12,"mor":0},"2018":{"inc":12,"fer":13,"mor":0},"2019":{"inc":8,"fer":9,"mor":0},"2020":{"inc":6,"fer":6,"mor":1},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":11,"fer":11,"mor":0},"2023":{"inc":10,"fer":13,"mor":0}},"total_inc":55,"total_fer":64,"total_mor":1},{"name":"Via San Paolo","lat":43.8823895,"lon":11.0674028,"years":{"2017":{"inc":6,"fer":7,"mor":0},"2018":{"inc":7,"fer":7,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":7,"fer":7,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":20,"total_fer":21,"total_mor":0},{"name":"Via Sem Benelli","lat":43.8832406,"lon":11.108742,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":5,"fer":7,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":5,"total_fer":7,"total_mor":0},{"name":"Via Siena","lat":43.871748,"lon":11.0912386,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":6,"fer":7,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":5,"fer":5,"mor":0}},"total_inc":11,"total_fer":12,"total_mor":0},{"name":"Via Suor Niccolina Infermiera","lat":43.8877699,"lon":11.0631802,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":7,"fer":8,"mor":0},"2022":{"inc":6,"fer":7,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":13,"total_fer":15,"total_mor":0},{"name":"Via Toscana","lat":43.8512764,"lon":11.059654,"years":{"2017":{"inc":11,"fer":12,"mor":0},"2018":{"inc":5,"fer":6,"mor":0},"2019":{"inc":6,"fer":10,"mor":0},"2020":{"inc":5,"fer":5,"mor":0},"2021":{"inc":8,"fer":10,"mor":0},"2022":{"inc":12,"fer":13,"mor":0},"2023":{"inc":11,"fer":11,"mor":0}},"total_inc":58,"total_fer":67,"total_mor":0},{"name":"Via Traversa Il Crocifisso","lat":43.8483969,"lon":11.0608265,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":6,"fer":6,"mor":0},"2019":{"inc":5,"fer":5,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":8,"fer":9,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":19,"total_fer":20,"total_mor":0},{"name":"Via Traversa Pistoiese","lat":43.8813558,"lon":11.0665244,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":11,"fer":12,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":11,"total_fer":12,"total_mor":0},{"name":"Via Vincenzo Da Filicaia","lat":43.8897297,"lon":11.0949825,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":5,"fer":5,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":5,"total_fer":5,"total_mor":0},{"name":"Viale Alessandro Manzoni","lat":43.8676032,"lon":11.0481541,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":8,"fer":9,"mor":1},"2019":{"inc":6,"fer":8,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":14,"total_fer":17,"total_mor":1},{"name":"Viale Borgo Valsugana","lat":43.8770737,"lon":11.1138484,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":8,"fer":9,"mor":0},"2019":{"inc":9,"fer":9,"mor":0},"2020":{"inc":10,"fer":14,"mor":0},"2021":{"inc":6,"fer":6,"mor":0},"2022":{"inc":9,"fer":11,"mor":0},"2023":{"inc":10,"fer":11,"mor":0}},"total_inc":52,"total_fer":60,"total_mor":0},{"name":"Viale Dell'Unione Europea","lat":43.8881296,"lon":11.0246251,"years":{"2017":{"inc":9,"fer":18,"mor":0},"2018":{"inc":5,"fer":8,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":7,"fer":12,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":21,"total_fer":38,"total_mor":0},{"name":"Viale Della Repubblica","lat":43.8686356,"lon":11.1139736,"years":{"2017":{"inc":22,"fer":26,"mor":0},"2018":{"inc":30,"fer":37,"mor":0},"2019":{"inc":19,"fer":21,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":15,"fer":18,"mor":0},"2022":{"inc":24,"fer":26,"mor":0},"2023":{"inc":24,"fer":26,"mor":0}},"total_inc":134,"total_fer":154,"total_mor":0},{"name":"Viale Fratelli Cervi","lat":43.8979695,"lon":11.0828874,"years":{"2017":{"inc":9,"fer":9,"mor":0},"2018":{"inc":10,"fer":12,"mor":0},"2019":{"inc":15,"fer":17,"mor":0},"2020":{"inc":9,"fer":10,"mor":0},"2021":{"inc":13,"fer":18,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":13,"fer":16,"mor":0}},"total_inc":69,"total_fer":82,"total_mor":0},{"name":"Viale Galileo Galilei","lat":43.8971939,"lon":11.1076647,"years":{"2017":{"inc":20,"fer":24,"mor":0},"2018":{"inc":21,"fer":23,"mor":0},"2019":{"inc":18,"fer":20,"mor":0},"2020":{"inc":16,"fer":18,"mor":0},"2021":{"inc":20,"fer":22,"mor":0},"2022":{"inc":20,"fer":21,"mor":0},"2023":{"inc":23,"fer":25,"mor":0}},"total_inc":138,"total_fer":153,"total_mor":0},{"name":"Viale Guglielmo Marconi","lat":43.8579241,"lon":11.1218082,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":5,"fer":6,"mor":0},"2019":{"inc":5,"fer":5,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":5,"fer":5,"mor":0},"2023":{"inc":5,"fer":5,"mor":0}},"total_inc":20,"total_fer":21,"total_mor":0},{"name":"Viale Leonardo Da Vinci","lat":43.8885563,"lon":11.020861,"years":{"2017":{"inc":56,"fer":90,"mor":0},"2018":{"inc":57,"fer":76,"mor":0},"2019":{"inc":52,"fer":82,"mor":0},"2020":{"inc":30,"fer":33,"mor":0},"2021":{"inc":54,"fer":92,"mor":0},"2022":{"inc":72,"fer":92,"mor":0},"2023":{"inc":41,"fer":56,"mor":0}},"total_inc":362,"total_fer":521,"total_mor":0},{"name":"Viale Montegrappa","lat":43.8688005,"lon":11.112502,"years":{"2017":{"inc":11,"fer":16,"mor":0},"2018":{"inc":18,"fer":19,"mor":0},"2019":{"inc":15,"fer":18,"mor":0},"2020":{"inc":12,"fer":13,"mor":0},"2021":{"inc":6,"fer":6,"mor":0},"2022":{"inc":14,"fer":15,"mor":0},"2023":{"inc":18,"fer":20,"mor":0}},"total_inc":94,"total_fer":107,"total_mor":0},{"name":"Viale Nam Dinh","lat":43.8888436,"lon":11.0698471,"years":{"2017":{"inc":10,"fer":19,"mor":0},"2018":{"inc":6,"fer":8,"mor":0},"2019":{"inc":9,"fer":11,"mor":0},"2020":{"inc":5,"fer":7,"mor":0},"2021":{"inc":5,"fer":6,"mor":0},"2022":{"inc":6,"fer":6,"mor":0},"2023":{"inc":9,"fer":12,"mor":0}},"total_inc":50,"total_fer":69,"total_mor":0},{"name":"Viale Piave","lat":43.8786179,"lon":11.0982608,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":5,"fer":5,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":5,"total_fer":5,"total_mor":0},{"name":"Viale Salvador Allende","lat":43.874757,"lon":11.0617485,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":7,"fer":8,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":10,"fer":14,"mor":0},"2023":{"inc":0,"fer":0,"mor":0}},"total_inc":17,"total_fer":22,"total_mor":0},{"name":"Viale Vittorio Veneto","lat":43.8775508,"lon":11.1026185,"years":{"2017":{"inc":0,"fer":0,"mor":0},"2018":{"inc":0,"fer":0,"mor":0},"2019":{"inc":0,"fer":0,"mor":0},"2020":{"inc":0,"fer":0,"mor":0},"2021":{"inc":0,"fer":0,"mor":0},"2022":{"inc":0,"fer":0,"mor":0},"2023":{"inc":5,"fer":5,"mor":0}},"total_inc":5,"total_fer":5,"total_mor":0}];
+
+const YEARS = ['2017','2018','2019','2020','2021','2022','2023'];
+const YEAR_TOTALS = {
+  '2017':{inc:580,fer:752,mor:3},
+  '2018':{inc:688,fer:857,mor:5},
+  '2019':{inc:684,fer:845,mor:4},
+  '2020':{inc:330,fer:377,mor:2},
+  '2021':{inc:517,fer:625,mor:3},
+  '2022':{inc:608,fer:720,mor:2},
+  '2023':{inc:593,fer:677,mor:1}
+};
+const FEATURES = {
+  'Viale Leonardo Da Vinci':'Semafori Adattivi + Dilemma Zone Protection',
+  'Via Roma':'Dilemma Zone Protection + Verde Anticipato Bici',
+  'Via Pistoiese':'Pedestrian Extension + Semafori Adattivi',
+  'Via Paronese':'Semafori Adattivi + Gating Rotonde',
+  'Via Firenze':'Dilemma Zone Protection',
+  'Via Galcianese':'Pedestrian Extension + Semafori Adattivi',
+  'Viale Galileo Galilei':'Semafori Adattivi',
+  'Viale Della Repubblica':'Environmental Traffic Mgmt + Adattivi',
+  'Via Fabio Filzi':'Dilemma Zone Protection',
+  'Via Francesco Ferrucci':'Pedestrian Extension',
+};
+
+let activeYear = 'all';
+
+function getColor(inc){
+  if(inc>=30)return'#ff1111';
+  if(inc>=15)return'#ff7700';
+  if(inc>=8)return'#ffdd00';
+  return'#44aaff';
+}
+function getRadius(inc){return Math.max(7,Math.sqrt(inc)*3.8)}
+
+function getInc(d,yr){return yr==='all'?d.total_inc:(d.years[yr]?.inc||0)}
+function getFer(d,yr){return yr==='all'?d.total_fer:(d.years[yr]?.fer||0)}
+function getMor(d,yr){return yr==='all'?d.total_mor:(d.years[yr]?.mor||0)}
+
+// MAP
+const map=L.map('map',{center:[43.878,11.095],zoom:13});
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap, © CARTO',maxZoom:19}).addTo(map);
+
+const markers=[];
+RAW.forEach(d=>{
+  const m=L.circleMarker([d.lat,d.lon],{radius:8,fillColor:'#44aaff',color:'#fff',weight:1,opacity:.9,fillOpacity:.75});
+  m.addTo(map);
+  markers.push({d,m});
+});
+
+function buildPopup(d,yr){
+  const inc=getInc(d,yr),fer=getFer(d,yr),mor=getMor(d,yr);
+  const deathRow=mor>0?`<div class="pop-row"><span class="pop-label">💀 Morti</span><span class="pop-val red">${mor}</span></div>`:'';
+  const feat=FEATURES[d.name]?`<div class="pop-feat">💡 ${FEATURES[d.name]}</div>`:'';
+  const maxInc=Math.max(...YEARS.map(y=>d.years[y]?.inc||0),1);
+  const bars=YEARS.map(y=>{
+    const v=d.years[y]?.inc||0;
+    const h=Math.max(2,Math.round((v/maxInc)*34));
+    const hasDeath=(d.years[y]?.mor||0)>0;
+    return`<div class="pop-bar-wrap"><div class="pop-bar${hasDeath?' has-death':''}" style="height:${h}px" title="${y}: ${v} inc"></div><div class="pop-yr">${y.slice(2)}</div></div>`;
+  }).join('');
+  const label=yr==='all'?'2017–2023':yr;
+  return`<div class="pop-title">${d.name}</div>
+    <div class="pop-row"><span class="pop-label">Periodo</span><span class="pop-val">${label}</span></div>
+    <div class="pop-row"><span class="pop-label">Incidenti</span><span class="pop-val blu">${inc}</span></div>
+    <div class="pop-row"><span class="pop-label">Feriti</span><span class="pop-val ora">${fer}</span></div>
+    ${deathRow}
+    <div class="pop-sep"></div>
+    <div style="font-size:.7rem;color:#557;margin-bottom:3px">Trend annuale (barre rosse = anno con morti)</div>
+    <div class="pop-trend">${bars}</div>
+    ${feat}`;
+}
+
+function updateMarkers(){
+  let maxInc=0;
+  RAW.forEach(d=>{const v=getInc(d,activeYear);if(v>maxInc)maxInc=v});
+  markers.forEach(({d,m})=>{
+    const inc=getInc(d,activeYear),mor=getMor(d,activeYear);
+    if(inc===0){m.setStyle({opacity:0,fillOpacity:0});m.closePopup();return}
+    m.setStyle({
+      radius:getRadius(inc),
+      fillColor:getColor(inc),
+      color:mor>0?'#ff3333':'#ffffff',
+      weight:mor>0?2.5:1,
+      opacity:.9,fillOpacity:.75
+    });
+    m.bindPopup(buildPopup(d,activeYear),{maxWidth:260});
+  });
+}
+
+function updateSidebar(){
+  // KPI
+  let ti=0,tf=0,tm=0;
+  if(activeYear==='all'){
+    YEARS.forEach(y=>{ti+=YEAR_TOTALS[y].inc;tf+=YEAR_TOTALS[y].fer;tm+=YEAR_TOTALS[y].mor});
+    document.getElementById('kpiLabel').textContent='2017–2023';
+    document.getElementById('listLabel').textContent='totale 2017–2023';
+  } else {
+    const t=YEAR_TOTALS[activeYear];
+    ti=t.inc;tf=t.fer;tm=t.mor;
+    document.getElementById('kpiLabel').textContent=activeYear;
+    document.getElementById('listLabel').textContent=activeYear;
+  }
+  document.getElementById('kpiInc').textContent=ti.toLocaleString('it');
+  document.getElementById('kpiFer').textContent=tf.toLocaleString('it');
+  document.getElementById('kpiMor').textContent=tm;
+
+  // Street list
+  const list=document.getElementById('streetList');
+  list.innerHTML='';
+  const sorted=[...RAW].filter(d=>getInc(d,activeYear)>0).sort((a,b)=>getInc(b,activeYear)-getInc(a,activeYear));
+  const maxI=sorted[0]?getInc(sorted[0],activeYear):1;
+  sorted.forEach(d=>{
+    const inc=getInc(d,activeYear),mor=getMor(d,activeYear);
+    const bw=Math.round((inc/maxI)*90);
+    const el=document.createElement('div');
+    el.className='st-item';
+    el.innerHTML=`<span class="st-name">${d.name}</span><div class="st-right"><div class="bar" style="width:${bw}px;background:${getColor(inc)}"></div><span class="bar-num">${inc}</span>${mor>0?'<span class="skull">💀</span>':''}</div>`;
+    el.addEventListener('click',()=>{
+      const mk=markers.find(mk=>mk.d.name===d.name);
+      if(mk&&getInc(mk.d,activeYear)>0){map.flyTo([mk.d.lat,mk.d.lon],15,{duration:.7});mk.m.openPopup()}
+    });
+    list.appendChild(el);
+  });
+}
+
+// TREND CHART (canvas)
+function drawTrend(){
+  const canvas=document.getElementById('trendChart');
+  const ctx=canvas.getContext('2d');
+  canvas.width=canvas.offsetWidth;canvas.height=80;
+  const vals=YEARS.map(y=>YEAR_TOTALS[y].inc);
+  const maxV=Math.max(...vals);
+  const W=canvas.width,H=canvas.height;
+  const pad={l:30,r:8,t:8,b:18};
+  const cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+  ctx.clearRect(0,0,W,H);
+  // bars
+  const bw=Math.floor(cw/YEARS.length)-4;
+  YEARS.forEach((y,i)=>{
+    const v=vals[i];
+    const x=pad.l+i*(cw/YEARS.length)+2;
+    const bh=Math.round((v/maxV)*ch);
+    const active=activeYear===y;
+    ctx.fillStyle=active?'#5aacff':'#2a5588';
+    ctx.fillRect(x,pad.t+ch-bh,bw,bh);
+    // label year
+    ctx.fillStyle='#556677';ctx.font='9px sans-serif';ctx.textAlign='center';
+    ctx.fillText(y.slice(2),x+bw/2,H-3);
+    // value on active
+    if(active||activeYear==='all'){ctx.fillStyle='#aab';ctx.font='8px sans-serif';ctx.fillText(v,x+bw/2,pad.t+ch-bh-2)}
+  });
+  // y-axis label
+  ctx.fillStyle='#445';ctx.font='8px sans-serif';ctx.textAlign='right';
+  ctx.fillText(maxV,pad.l-2,pad.t+10);
+  ctx.fillText(0,pad.l-2,pad.t+ch);
+}
+
+// BUTTONS
+document.querySelectorAll('.yr-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.yr-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    activeYear=btn.dataset.year;
+    updateMarkers();updateSidebar();drawTrend();
+  });
+});
+
+// ─── INCROCI PRE-COMPUTATI (da OSM, statici) ────────────────────────────────
+
+// ─── INCROCI TRA STRADE AD ALTO RISCHIO ─────────────────────────────────────
+const INTERSECTIONS = [
+  {lat:43.8529,lon:11.0772,streets:["Via Paronese","Via Roma"]},
+  {lat:43.8911,lon:11.0747,streets:["Via Fabio Filzi","Via Pistoiese"]},
+  {lat:43.8733,lon:11.0907,streets:["Via Marco Roncioni","Via Roma"]},
+  {lat:43.8773,lon:11.0804,streets:["Via Galcianese","Via Marco Roncioni","Via San Giusto"]},
+  {lat:43.883, lon:11.0915,streets:["Via Cavour","Via Pistoiese"]},
+  {lat:43.9047,lon:11.1092,streets:["Via Bologna","Viale Galileo Galilei"]},
+  {lat:43.8756,lon:11.103, streets:["Via Francesco Ferrucci","Via Giuseppe Valentini"]},
+  {lat:43.8629,lon:11.1184,streets:["Via Francesco Ferrucci","Viale Montegrappa"]},
+  {lat:43.8556,lon:11.0698,streets:["Via Paronese","Via Toscana"]},
+  {lat:43.8773,lon:11.0807,streets:["Via Galcianese","Via Marco Roncioni"]},
+  {lat:43.8806,lon:11.089, streets:["Via Cavour","Via Galcianese"]},
+  {lat:43.873, lon:11.1175,streets:["Via Firenze","Viale Borgo Valsugana"]},
+  {lat:43.883, lon:11.0658,streets:["Via Galcianese","Viale Nam Dinh"]},
+  {lat:43.8962,lon:11.0795,streets:["Via Montalese","Viale Fratelli Cervi","Viale Nam Dinh"]},
+  {lat:43.9082,lon:11.1156,streets:["Via Bologna","Viale Fratelli Cervi"]},
+  {lat:43.8964,lon:11.08,  streets:["Via Montalese","Viale Fratelli Cervi"]},
+  {lat:43.8959,lon:11.0791,streets:["Via Montalese","Viale Nam Dinh"]},
+  {lat:43.8983,lon:11.0836,streets:["Via Liliana Rossi","Viale Fratelli Cervi"]}
+];
+
+INTERSECTIONS.forEach(({lat,lon,streets})=>{
+  const r = streets.length>=3?10:7;
+  const nomi = streets.map(s=>`<span style="color:#5aacff">${s}</span>`).join(' × ');
+  const popup = `<b>⚠️ Incrocio tra strade ad alto rischio</b><br>${nomi}`;
+  L.circleMarker([lat,lon],{
+    radius:r, fillColor:'#ffffff', color:'#ff4444',
+    weight:2.5, opacity:1, fillOpacity:0.9
+  }).bindPopup(popup,{maxWidth:270}).addTo(map);
+});
+
+// INIT
+updateMarkers();updateSidebar();
+window.addEventListener('load',drawTrend);
+window.addEventListener('resize',drawTrend);
+</script>
+</body>
+</html>
