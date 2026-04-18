@@ -10,7 +10,7 @@
     body{font-family:'Segoe UI',Arial,sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
 
     header{background:#1a1d27;border-bottom:2px solid #2a6ebb;padding:10px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-    header h1{font-size:1.1rem;color:#fff}
+    header h1{font-size:1.1rem;color:#fff;white-space:nowrap}
     header .sub{font-size:0.78rem;color:#778899}
     .src-link{background:#2a6ebb22;border:1px solid #2a6ebb;color:#5aacff;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;text-decoration:none;white-space:nowrap;margin-left:auto}
     .src-link:hover{background:#2a6ebb44}
@@ -21,39 +21,37 @@
     .yr-btn:hover{border-color:#5aacff;color:#5aacff}
     .yr-btn.active{background:#2a6ebb;border-color:#2a6ebb;color:#fff;font-weight:700}
 
-    .dashboard{padding:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:1400px;margin:0 auto}
+    .dashboard{padding:16px;display:grid;grid-template-columns:3fr 1fr;gap:14px;max-width:1400px;margin:0 auto}
 
     .kpi-row{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-    .kpi{background:#1a1d27;border:1px solid #2a3040;border-radius:8px;padding:14px 10px;text-align:center}
-    .kpi .v{font-size:2rem;font-weight:700;color:#fff;line-height:1}
-    .kpi .l{font-size:0.7rem;color:#556677;margin-top:5px;text-transform:uppercase;letter-spacing:.6px}
+    .kpi{background:#1a1d27;border:1px solid #2a3040;border-radius:8px;padding:14px 16px;text-align:center}
+    .kpi .v{font-size:2rem;font-weight:700;color:#fff;line-height:1.1}
+    .kpi .l{font-size:0.7rem;color:#556677;margin-top:4px;text-transform:uppercase;letter-spacing:.6px}
     .kpi.blu .v{color:#5aacff}
     .kpi.ora .v{color:#ff9944}
     .kpi.red .v{color:#ff5555}
-    .kpi.grn .v{color:#44cc88;font-size:1.3rem}
+    .kpi.grn .v{color:#44cc88}
 
     .card{background:#1a1d27;border:1px solid #2a3040;border-radius:8px;padding:16px}
     .card.full{grid-column:1/-1}
-    .card.wide{grid-column:1/3}
-    .card.narrow{grid-column:3/4}
-    .card h3{font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:#5aacff;margin-bottom:14px}
+    .card h3{font-size:0.68rem;text-transform:uppercase;letter-spacing:1px;color:#5aacff;margin-bottom:14px}
 
     .chart-wrap{position:relative}
     .chart-wrap.tall{height:520px}
-    .chart-wrap.mid{height:130px}
+    .chart-wrap.medium{height:130px}
 
-    .death-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1e2230;font-size:0.8rem;gap:8px}
+    .death-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1e2230;font-size:0.79rem}
     .death-item:last-child{border-bottom:none}
-    .death-name{color:#dde;flex:1}
-    .death-yr{font-size:.68rem;color:#556677}
-    .death-badge{background:#ff333322;border:1px solid #ff3333;color:#ff5555;padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700;white-space:nowrap;flex-shrink:0}
+    .death-name{color:#dde;flex:1;padding-right:8px;line-height:1.3}
+    .death-badge{background:#ff333322;border:1px solid #ff3333;color:#ff5555;padding:2px 8px;border-radius:10px;font-size:0.71rem;font-weight:700;white-space:nowrap}
+    .no-deaths{color:#445;font-size:.81rem;padding:10px 0}
 
-    .note{grid-column:1/-1;font-size:0.69rem;color:#3a4a5a;line-height:1.6;padding:4px 2px}
+    .note{grid-column:1/-1;font-size:0.69rem;color:#445;line-height:1.6;padding:4px 2px}
 
-    @media(max-width:900px){
+    @media(max-width:860px){
       .dashboard{grid-template-columns:1fr}
-      .card.full,.card.wide,.card.narrow{grid-column:1/-1}
       .kpi-row{grid-template-columns:1fr 1fr}
+      .card.full{grid-column:1}
       .chart-wrap.tall{height:700px}
     }
   </style>
@@ -62,8 +60,8 @@
 
 <header>
   <div>
-    <h1>📊 PratoMiMuovo — Incidenti Stradali Prato 2017–2023</h1>
-    <div class="sub">Fonte: Polizia Municipale di Prato • 100 strade con ≥ 5 incidenti/anno</div>
+    <h1>📊 PratoMiMuovo — Incidenti Stradali 2017–2023</h1>
+    <div class="sub">Fonte: Polizia Municipale di Prato · 100 strade con ≥ 5 incidenti/anno</div>
   </div>
   <a class="src-link" href="https://statistica.comune.prato.it/it/statistica/aree-tematiche/incidenti-stradali/pagina2409.html" target="_blank">📂 Dati ufficiali Comune di Prato ↗</a>
 </header>
@@ -90,22 +88,26 @@
   </div>
 
   <div class="card full">
-    <h3>Trend annuale — incidenti e feriti per anno</h3>
-    <div class="chart-wrap mid"><canvas id="trendChart"></canvas></div>
+    <h3>Trend annuale — incidenti e feriti (2017–2023)</h3>
+    <div class="chart-wrap medium">
+      <canvas id="trendChart"></canvas>
+    </div>
   </div>
 
-  <div class="card wide">
+  <div class="card">
     <h3>Top 20 strade per incidenti — <span id="streetsLabel">2017–2023</span></h3>
-    <div class="chart-wrap tall"><canvas id="streetsChart"></canvas></div>
+    <div class="chart-wrap tall">
+      <canvas id="streetsChart"></canvas>
+    </div>
   </div>
 
-  <div class="card narrow">
+  <div class="card">
     <h3>Strade con vittime — <span id="deathsLabel">2017–2023</span></h3>
     <div id="deathsList"></div>
   </div>
 
   <div class="note">
-    Dati: report annuali Polizia Municipale di Prato (Tabella 3.17). Gli incidenti sono attribuiti alla via, non al punto esatto della strada. Anno 2020 fortemente influenzato dai lockdown COVID-19.
+    Dati: report annuali Polizia Municipale di Prato (Tabella 3.17). Gli incidenti sono attribuiti alla via nel suo complesso, non al punto esatto. In caso di incrocio entrambe le vie vengono conteggiate separatamente.
   </div>
 
 </div>
@@ -136,70 +138,71 @@ Chart.defaults.borderColor='#2a3040';
 Chart.defaults.font.family="'Segoe UI',Arial,sans-serif";
 Chart.defaults.font.size=11;
 
-function barColors(yr){
-  return YEARS.map(y=>{
-    if(activeYear==='all') return '#2a6ebb';
-    return y===yr?'#5aacff':'#1e2a3a';
+function barColors(values, highlight){
+  return values.map((v,i)=>{
+    if(highlight!==null && i!==highlight) return '#1e2a3a';
+    if(v>=30)return'#ff111199';
+    if(v>=15)return'#ff770099';
+    if(v>=8) return'#ffdd0099';
+    return'#44aaff99';
+  });
+}
+function barBorders(values, highlight){
+  return values.map((v,i)=>{
+    if(highlight!==null && i!==highlight) return '#2a3040';
+    if(v>=30)return'#ff1111';
+    if(v>=15)return'#ff7700';
+    if(v>=8) return'#ffdd00';
+    return'#44aaff';
   });
 }
 
 function initTrend(){
   const ctx=document.getElementById('trendChart').getContext('2d');
+  const incVals=YEARS.map(y=>YEAR_TOTALS[y].inc);
+  const ferVals=YEARS.map(y=>YEAR_TOTALS[y].fer);
+  const hi=activeYear==='all'?null:YEARS.indexOf(activeYear);
   trendChart=new Chart(ctx,{
     type:'bar',
     data:{
       labels:YEARS,
       datasets:[
-        {label:'Incidenti',data:YEARS.map(y=>YEAR_TOTALS[y].inc),
-          backgroundColor:barColors(activeYear),borderColor:'#5aacff',borderWidth:1,borderRadius:3,order:2},
-        {label:'Feriti',type:'line',data:YEARS.map(y=>YEAR_TOTALS[y].fer),
-          borderColor:'#ff9944',backgroundColor:'transparent',borderWidth:2,
-          pointRadius:4,pointBackgroundColor:'#ff9944',tension:0.3,order:1}
+        {label:'Incidenti',data:incVals,
+         backgroundColor:barColors(incVals,hi),
+         borderColor:barBorders(incVals,hi),
+         borderWidth:1,borderRadius:3,order:2},
+        {label:'Feriti',data:ferVals,type:'line',
+         borderColor:'#ff9944',backgroundColor:'transparent',
+         borderWidth:2,pointRadius:4,pointBackgroundColor:'#ff9944',
+         tension:0.3,order:1}
       ]
     },
     options:{
       responsive:true,maintainAspectRatio:false,
       plugins:{
-        legend:{labels:{color:'#aab',boxWidth:14,padding:16}},
+        legend:{labels:{color:'#aab',boxWidth:12,padding:16}},
         tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y.toLocaleString('it')}`}}
       },
       scales:{
-        x:{ticks:{color:'#778899'},grid:{color:'#1e2230'}},
+        x:{ticks:{color:'#778899'},grid:{color:'#1a1d27'}},
         y:{ticks:{color:'#5aacff'},grid:{color:'#1e2230'},beginAtZero:true}
       }
     }
   });
 }
 
-function topStreets(){
-  return [...RAW].sort((a,b)=>getInc(b,activeYear)-getInc(a,activeYear))
-    .filter(d=>getInc(d,activeYear)>0).slice(0,20);
-}
-
-function streetBgColor(inc){
-  if(inc>=30)return'rgba(255,17,17,0.55)';
-  if(inc>=15)return'rgba(255,119,0,0.55)';
-  if(inc>=8)return'rgba(255,221,0,0.55)';
-  return'rgba(68,170,255,0.55)';
-}
-function streetBorderColor(inc){
-  if(inc>=30)return'#ff1111';
-  if(inc>=15)return'#ff7700';
-  if(inc>=8)return'#ffdd00';
-  return'#44aaff';
-}
-
 function initStreets(){
   const ctx=document.getElementById('streetsChart').getContext('2d');
   const sorted=topStreets();
+  const vals=sorted.map(d=>getInc(d,activeYear));
   streetsChart=new Chart(ctx,{
     type:'bar',
     data:{
       labels:sorted.map(d=>d.name),
       datasets:[{
-        data:sorted.map(d=>getInc(d,activeYear)),
-        backgroundColor:sorted.map(d=>streetBgColor(getInc(d,activeYear))),
-        borderColor:sorted.map(d=>streetBorderColor(getInc(d,activeYear))),
+        data:vals,
+        backgroundColor:vals.map(v=>v>=30?'#ff111188':v>=15?'#ff770088':v>=8?'#ffdd0088':'#44aaff88'),
+        borderColor:vals.map(v=>v>=30?'#ff1111':v>=15?'#ff7700':v>=8?'#ffdd00':'#44aaff'),
         borderWidth:1,borderRadius:3
       }]
     },
@@ -217,6 +220,12 @@ function initStreets(){
   });
 }
 
+function topStreets(){
+  return [...RAW].filter(d=>getInc(d,activeYear)>0)
+    .sort((a,b)=>getInc(b,activeYear)-getInc(a,activeYear))
+    .slice(0,20);
+}
+
 function updateKPI(){
   let ti=0,tf=0,tm=0,ts=0;
   if(activeYear==='all'){
@@ -229,11 +238,14 @@ function updateKPI(){
   document.getElementById('kpiInc').textContent=ti.toLocaleString('it');
   document.getElementById('kpiFer').textContent=tf.toLocaleString('it');
   document.getElementById('kpiMor').textContent=tm;
-  document.getElementById('kpiStr').textContent=ts+' vie';
+  document.getElementById('kpiStr').textContent=ts;
 }
 
 function updateTrend(){
-  trendChart.data.datasets[0].backgroundColor=barColors(activeYear);
+  const hi=activeYear==='all'?null:YEARS.indexOf(activeYear);
+  const incVals=YEARS.map(y=>YEAR_TOTALS[y].inc);
+  trendChart.data.datasets[0].backgroundColor=barColors(incVals,hi);
+  trendChart.data.datasets[0].borderColor=barBorders(incVals,hi);
   trendChart.update();
 }
 
@@ -241,10 +253,11 @@ function updateStreets(){
   const label=activeYear==='all'?'2017–2023':activeYear;
   document.getElementById('streetsLabel').textContent=label;
   const sorted=topStreets();
+  const vals=sorted.map(d=>getInc(d,activeYear));
   streetsChart.data.labels=sorted.map(d=>d.name);
-  streetsChart.data.datasets[0].data=sorted.map(d=>getInc(d,activeYear));
-  streetsChart.data.datasets[0].backgroundColor=sorted.map(d=>streetBgColor(getInc(d,activeYear)));
-  streetsChart.data.datasets[0].borderColor=sorted.map(d=>streetBorderColor(getInc(d,activeYear)));
+  streetsChart.data.datasets[0].data=vals;
+  streetsChart.data.datasets[0].backgroundColor=vals.map(v=>v>=30?'#ff111188':v>=15?'#ff770088':v>=8?'#ffdd0088':'#44aaff88');
+  streetsChart.data.datasets[0].borderColor=vals.map(v=>v>=30?'#ff1111':v>=15?'#ff7700':v>=8?'#ffdd00':'#44aaff');
   streetsChart.update();
 }
 
@@ -256,22 +269,19 @@ function updateDeaths(){
   const withDeaths=[...RAW].filter(d=>getMor(d,activeYear)>0)
     .sort((a,b)=>getMor(b,activeYear)-getMor(a,activeYear));
   if(!withDeaths.length){
-    list.innerHTML='<div style="color:#445;font-size:.82rem;padding:10px 0">Nessuna vittima nel periodo selezionato</div>';
+    list.innerHTML='<div class="no-deaths">Nessuna vittima nel periodo selezionato.</div>';
     return;
   }
   withDeaths.forEach(d=>{
     const mor=getMor(d,activeYear);
-    const anni=activeYear==='all'
-      ? YEARS.filter(y=>(d.years[y]?.mor||0)>0).join(', ')
-      : activeYear;
     const el=document.createElement('div');
     el.className='death-item';
-    el.innerHTML=`<div><div class="death-name">${d.name}</div><div class="death-yr">${anni}</div></div><span class="death-badge">💀 ${mor}</span>`;
+    el.innerHTML=`<span class="death-name">${d.name}</span><span class="death-badge">💀 ${mor} ${mor===1?'vittima':'vittime'}</span>`;
     list.appendChild(el);
   });
 }
 
-function updateAll(){updateKPI();updateTrend();updateStreets();updateDeaths()}
+function updateAll(){updateKPI();updateTrend();updateStreets();updateDeaths();}
 
 initTrend();
 initStreets();
