@@ -2,89 +2,67 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>PratoMiMuovo – Incidenti Stradali 2017–2023</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Segoe UI',Arial,sans-serif;background:#0f1117;color:#e0e0e0;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+    body{font-family:'Segoe UI',Arial,sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh}
 
-    /* HEADER */
-    header{background:#1a1d27;border-bottom:2px solid #2a6ebb;padding:10px 18px;display:flex;align-items:center;gap:14px;flex-shrink:0;flex-wrap:wrap}
-    header h1{font-size:1.1rem;color:#fff;white-space:nowrap}
+    header{background:#1a1d27;border-bottom:2px solid #2a6ebb;padding:10px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+    header h1{font-size:1.1rem;color:#fff}
     header .sub{font-size:0.78rem;color:#778899}
-    .src-link{background:#2a6ebb22;border:1px solid #2a6ebb;color:#5aacff;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;text-decoration:none;white-space:nowrap}
+    .src-link{background:#2a6ebb22;border:1px solid #2a6ebb;color:#5aacff;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;text-decoration:none;white-space:nowrap;margin-left:auto}
     .src-link:hover{background:#2a6ebb44}
 
-    /* YEAR FILTER BAR */
-    .year-bar{background:#13161f;border-bottom:1px solid #2a3040;padding:7px 18px;display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap}
+    .year-bar{background:#13161f;border-bottom:1px solid #2a3040;padding:7px 18px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     .year-bar span{font-size:0.75rem;color:#778899;margin-right:4px}
     .yr-btn{background:#1a1d27;border:1px solid #2a3040;color:#aab;padding:4px 12px;border-radius:14px;cursor:pointer;font-size:0.78rem;transition:all .15s}
     .yr-btn:hover{border-color:#5aacff;color:#5aacff}
     .yr-btn.active{background:#2a6ebb;border-color:#2a6ebb;color:#fff;font-weight:700}
 
-    /* MAIN LAYOUT */
-    .main{display:flex;flex:1;overflow:hidden}
-    #map{flex:1}
+    .dashboard{padding:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:1400px;margin:0 auto}
 
-    /* SIDEBAR */
-    .sidebar{width:300px;background:#1a1d27;border-left:1px solid #2a3040;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column}
-    .sb-section{padding:12px 14px;border-bottom:1px solid #2a3040}
-    .sb-section h3{font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:#5aacff;margin-bottom:10px}
-
-    /* KPI cards */
-    .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-    .kpi{background:#0f1117;border:1px solid #2a3040;border-radius:6px;padding:8px;text-align:center}
-    .kpi .v{font-size:1.4rem;font-weight:700;color:#fff}
-    .kpi .l{font-size:0.68rem;color:#556677;margin-top:1px}
+    .kpi-row{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .kpi{background:#1a1d27;border:1px solid #2a3040;border-radius:8px;padding:14px 10px;text-align:center}
+    .kpi .v{font-size:2rem;font-weight:700;color:#fff;line-height:1}
+    .kpi .l{font-size:0.7rem;color:#556677;margin-top:5px;text-transform:uppercase;letter-spacing:.6px}
+    .kpi.blu .v{color:#5aacff}
+    .kpi.ora .v{color:#ff9944}
     .kpi.red .v{color:#ff5555}
-    .kpi.ora .v{color:#ffdd44;font-size:1rem}
+    .kpi.grn .v{color:#44cc88;font-size:1.3rem}
 
-    /* MINI TREND CHART */
-    #trendChart{width:100%;height:80px;margin-top:4px}
+    .card{background:#1a1d27;border:1px solid #2a3040;border-radius:8px;padding:16px}
+    .card.full{grid-column:1/-1}
+    .card.wide{grid-column:1/3}
+    .card.narrow{grid-column:3/4}
+    .card h3{font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:#5aacff;margin-bottom:14px}
 
-    /* LEGEND */
-    .leg-row{display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:0.79rem;color:#ccc}
-    .leg-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:2px solid rgba(255,255,255,0.25)}
+    .chart-wrap{position:relative}
+    .chart-wrap.tall{height:520px}
+    .chart-wrap.mid{height:130px}
 
-    /* STREET LIST */
-    .street-list{padding:0 14px 12px;flex:1}
-    .st-item{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1e2230;font-size:0.79rem;cursor:pointer;transition:.12s}
-    .st-item:hover{background:#1e2230;margin:0 -14px;padding:6px 14px}
-    .st-name{color:#dde;flex:1;padding-right:6px}
-    .st-right{display:flex;align-items:center;gap:4px}
-    .bar{height:7px;border-radius:2px;min-width:3px}
-    .bar-num{font-size:0.75rem;font-weight:700;color:#5aacff;min-width:20px;text-align:right}
-    .skull{font-size:0.8rem}
+    .death-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1e2230;font-size:0.8rem;gap:8px}
+    .death-item:last-child{border-bottom:none}
+    .death-name{color:#dde;flex:1}
+    .death-yr{font-size:.68rem;color:#556677}
+    .death-badge{background:#ff333322;border:1px solid #ff3333;color:#ff5555;padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700;white-space:nowrap;flex-shrink:0}
 
-    /* FOOTER NOTE */
-    .note{padding:9px 14px;font-size:0.69rem;color:#445;line-height:1.5;border-top:1px solid #2a3040}
+    .note{grid-column:1/-1;font-size:0.69rem;color:#3a4a5a;line-height:1.6;padding:4px 2px}
 
-    /* POPUP */
-    .leaflet-popup-content-wrapper{background:#1a1d27!important;border:1px solid #2a6ebb!important;color:#e0e0e0!important;border-radius:8px!important;box-shadow:0 4px 20px rgba(0,0,0,.6)!important}
-    .leaflet-popup-tip{background:#1a1d27!important}
-    .pop-title{font-size:.95rem;font-weight:700;color:#fff;margin-bottom:7px}
-    .pop-row{display:flex;justify-content:space-between;font-size:.82rem;margin:2px 0}
-    .pop-label{color:#778899}
-    .pop-val{font-weight:700;color:#fff}
-    .pop-val.blu{color:#5aacff}
-    .pop-val.ora{color:#ff9944}
-    .pop-val.red{color:#ff5555}
-    .pop-sep{border-top:1px solid #2a3040;margin:7px 0}
-    .pop-trend{display:flex;gap:3px;align-items:flex-end;height:36px;margin-top:4px}
-    .pop-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1}
-    .pop-bar{background:#2a6ebb;border-radius:2px 2px 0 0;width:100%;min-height:2px;transition:.2s}
-    .pop-bar.has-death{background:#ff5555}
-    .pop-yr{font-size:0.58rem;color:#557}
-    .pop-feat{margin-top:7px;padding-top:6px;border-top:1px solid #2a3040;font-size:.73rem;color:#6699cc;font-style:italic}
+    @media(max-width:900px){
+      .dashboard{grid-template-columns:1fr}
+      .card.full,.card.wide,.card.narrow{grid-column:1/-1}
+      .kpi-row{grid-template-columns:1fr 1fr}
+      .chart-wrap.tall{height:700px}
+    }
   </style>
 </head>
 <body>
 
 <header>
   <div>
-    <h1>🗺️ PratoMiMuovo — Incidenti Stradali 2017–2023</h1>
+    <h1>📊 PratoMiMuovo — Incidenti Stradali Prato 2017–2023</h1>
     <div class="sub">Fonte: Polizia Municipale di Prato • 100 strade con ≥ 5 incidenti/anno</div>
   </div>
   <a class="src-link" href="https://statistica.comune.prato.it/it/statistica/aree-tematiche/incidenti-stradali/pagina2409.html" target="_blank">📂 Dati ufficiali Comune di Prato ↗</a>
@@ -102,44 +80,34 @@
   <button class="yr-btn active" data-year="all">Tutti (2017–2023)</button>
 </div>
 
-<div class="main">
-  <div id="map"></div>
-  <div class="sidebar">
+<div class="dashboard">
 
-    <div class="sb-section">
-      <h3>Riepilogo — <span id="kpiLabel">2017–2023</span></h3>
-      <div class="kpi-grid">
-        <div class="kpi"><div class="v" id="kpiInc">4.000</div><div class="l">Incidenti</div></div>
-        <div class="kpi"><div class="v" id="kpiFer">4.853</div><div class="l">Feriti</div></div>
-        <div class="kpi red"><div class="v" id="kpiMor">23</div><div class="l">Morti</div></div>
-        <div class="kpi ora"><div class="v">17–18</div><div class="l">Ora più critica</div></div>
-      </div>
-    </div>
-
-    <div class="sb-section">
-      <h3>Trend incidenti per anno</h3>
-      <canvas id="trendChart"></canvas>
-    </div>
-
-    <div class="sb-section">
-      <h3>Legenda</h3>
-      <div class="leg-row"><div class="leg-dot" style="background:#ff1111"></div>Critico (≥ 30 incidenti)</div>
-      <div class="leg-row"><div class="leg-dot" style="background:#ff7700"></div>Alto (15–29)</div>
-      <div class="leg-row"><div class="leg-dot" style="background:#ffdd00"></div>Medio (8–14)</div>
-      <div class="leg-row"><div class="leg-dot" style="background:#44aaff"></div>Moderato (&lt; 8)</div>
-      <div class="leg-row"><div class="leg-dot" style="background:#fff;border-color:#ff3333"></div>Presenza di morti</div>
-    </div>
-
-    <div class="sb-section">
-      <h3>Strade per incidenti — <span id="listLabel">totale 2017–2023</span></h3>
-    </div>
-    <div class="street-list" id="streetList"></div>
-
-    <div class="note">
-      Clicca un marker per dettagli anno per anno.<br>
-      💡 Le strade con più incidenti sono i candidati primari per i semafori adattivi e la Dilemma Zone Protection di PratoMiMuovo.
-    </div>
+  <div class="kpi-row">
+    <div class="kpi blu"><div class="v" id="kpiInc">—</div><div class="l">Incidenti</div></div>
+    <div class="kpi ora"><div class="v" id="kpiFer">—</div><div class="l">Feriti</div></div>
+    <div class="kpi red"><div class="v" id="kpiMor">—</div><div class="l">Morti</div></div>
+    <div class="kpi grn"><div class="v" id="kpiStr">—</div><div class="l">Strade coinvolte</div></div>
   </div>
+
+  <div class="card full">
+    <h3>Trend annuale — incidenti e feriti per anno</h3>
+    <div class="chart-wrap mid"><canvas id="trendChart"></canvas></div>
+  </div>
+
+  <div class="card wide">
+    <h3>Top 20 strade per incidenti — <span id="streetsLabel">2017–2023</span></h3>
+    <div class="chart-wrap tall"><canvas id="streetsChart"></canvas></div>
+  </div>
+
+  <div class="card narrow">
+    <h3>Strade con vittime — <span id="deathsLabel">2017–2023</span></h3>
+    <div id="deathsList"></div>
+  </div>
+
+  <div class="note">
+    Dati: report annuali Polizia Municipale di Prato (Tabella 3.17). Gli incidenti sono attribuiti alla via, non al punto esatto della strada. Anno 2020 fortemente influenzato dai lockdown COVID-19.
+  </div>
+
 </div>
 
 <script>
@@ -155,200 +123,169 @@ const YEAR_TOTALS = {
   '2022':{inc:608,fer:720,mor:2},
   '2023':{inc:593,fer:677,mor:1}
 };
-const FEATURES = {
-  'Viale Leonardo Da Vinci':'Semafori Adattivi + Dilemma Zone Protection',
-  'Via Roma':'Dilemma Zone Protection + Verde Anticipato Bici',
-  'Via Pistoiese':'Pedestrian Extension + Semafori Adattivi',
-  'Via Paronese':'Semafori Adattivi + Gating Rotonde',
-  'Via Firenze':'Dilemma Zone Protection',
-  'Via Galcianese':'Pedestrian Extension + Semafori Adattivi',
-  'Viale Galileo Galilei':'Semafori Adattivi',
-  'Viale Della Repubblica':'Environmental Traffic Mgmt + Adattivi',
-  'Via Fabio Filzi':'Dilemma Zone Protection',
-  'Via Francesco Ferrucci':'Pedestrian Extension',
-};
 
 let activeYear = 'all';
-
-function getColor(inc){
-  if(inc>=30)return'#ff1111';
-  if(inc>=15)return'#ff7700';
-  if(inc>=8)return'#ffdd00';
-  return'#44aaff';
-}
-function getRadius(inc){return Math.max(7,Math.sqrt(inc)*3.8)}
+let trendChart, streetsChart;
 
 function getInc(d,yr){return yr==='all'?d.total_inc:(d.years[yr]?.inc||0)}
 function getFer(d,yr){return yr==='all'?d.total_fer:(d.years[yr]?.fer||0)}
 function getMor(d,yr){return yr==='all'?d.total_mor:(d.years[yr]?.mor||0)}
 
-// MAP
-const map=L.map('map',{center:[43.878,11.095],zoom:13});
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap, © CARTO',maxZoom:19}).addTo(map);
+Chart.defaults.color='#778899';
+Chart.defaults.borderColor='#2a3040';
+Chart.defaults.font.family="'Segoe UI',Arial,sans-serif";
+Chart.defaults.font.size=11;
 
-const markers=[];
-RAW.forEach(d=>{
-  const m=L.circleMarker([d.lat,d.lon],{radius:8,fillColor:'#44aaff',color:'#fff',weight:1,opacity:.9,fillOpacity:.75});
-  m.addTo(map);
-  markers.push({d,m});
-});
-
-function buildPopup(d,yr){
-  const inc=getInc(d,yr),fer=getFer(d,yr),mor=getMor(d,yr);
-  const deathRow=mor>0?`<div class="pop-row"><span class="pop-label">💀 Morti</span><span class="pop-val red">${mor}</span></div>`:'';
-  const feat=FEATURES[d.name]?`<div class="pop-feat">💡 ${FEATURES[d.name]}</div>`:'';
-  const maxInc=Math.max(...YEARS.map(y=>d.years[y]?.inc||0),1);
-  const bars=YEARS.map(y=>{
-    const v=d.years[y]?.inc||0;
-    const h=Math.max(2,Math.round((v/maxInc)*34));
-    const hasDeath=(d.years[y]?.mor||0)>0;
-    return`<div class="pop-bar-wrap"><div class="pop-bar${hasDeath?' has-death':''}" style="height:${h}px" title="${y}: ${v} inc"></div><div class="pop-yr">${y.slice(2)}</div></div>`;
-  }).join('');
-  const label=yr==='all'?'2017–2023':yr;
-  return`<div class="pop-title">${d.name}</div>
-    <div class="pop-row"><span class="pop-label">Periodo</span><span class="pop-val">${label}</span></div>
-    <div class="pop-row"><span class="pop-label">Incidenti</span><span class="pop-val blu">${inc}</span></div>
-    <div class="pop-row"><span class="pop-label">Feriti</span><span class="pop-val ora">${fer}</span></div>
-    ${deathRow}
-    <div class="pop-sep"></div>
-    <div style="font-size:.7rem;color:#557;margin-bottom:3px">Trend annuale (barre rosse = anno con morti)</div>
-    <div class="pop-trend">${bars}</div>
-    ${feat}`;
-}
-
-function updateMarkers(){
-  let maxInc=0;
-  RAW.forEach(d=>{const v=getInc(d,activeYear);if(v>maxInc)maxInc=v});
-  markers.forEach(({d,m})=>{
-    const inc=getInc(d,activeYear),mor=getMor(d,activeYear);
-    if(inc===0){m.setStyle({opacity:0,fillOpacity:0});m.closePopup();return}
-    m.setStyle({
-      radius:getRadius(inc),
-      fillColor:getColor(inc),
-      color:mor>0?'#ff3333':'#ffffff',
-      weight:mor>0?2.5:1,
-      opacity:.9,fillOpacity:.75
-    });
-    m.bindPopup(buildPopup(d,activeYear),{maxWidth:260});
+function barColors(yr){
+  return YEARS.map(y=>{
+    if(activeYear==='all') return '#2a6ebb';
+    return y===yr?'#5aacff':'#1e2a3a';
   });
 }
 
-function updateSidebar(){
-  // KPI
-  let ti=0,tf=0,tm=0;
+function initTrend(){
+  const ctx=document.getElementById('trendChart').getContext('2d');
+  trendChart=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:YEARS,
+      datasets:[
+        {label:'Incidenti',data:YEARS.map(y=>YEAR_TOTALS[y].inc),
+          backgroundColor:barColors(activeYear),borderColor:'#5aacff',borderWidth:1,borderRadius:3,order:2},
+        {label:'Feriti',type:'line',data:YEARS.map(y=>YEAR_TOTALS[y].fer),
+          borderColor:'#ff9944',backgroundColor:'transparent',borderWidth:2,
+          pointRadius:4,pointBackgroundColor:'#ff9944',tension:0.3,order:1}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{color:'#aab',boxWidth:14,padding:16}},
+        tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y.toLocaleString('it')}`}}
+      },
+      scales:{
+        x:{ticks:{color:'#778899'},grid:{color:'#1e2230'}},
+        y:{ticks:{color:'#5aacff'},grid:{color:'#1e2230'},beginAtZero:true}
+      }
+    }
+  });
+}
+
+function topStreets(){
+  return [...RAW].sort((a,b)=>getInc(b,activeYear)-getInc(a,activeYear))
+    .filter(d=>getInc(d,activeYear)>0).slice(0,20);
+}
+
+function streetBgColor(inc){
+  if(inc>=30)return'rgba(255,17,17,0.55)';
+  if(inc>=15)return'rgba(255,119,0,0.55)';
+  if(inc>=8)return'rgba(255,221,0,0.55)';
+  return'rgba(68,170,255,0.55)';
+}
+function streetBorderColor(inc){
+  if(inc>=30)return'#ff1111';
+  if(inc>=15)return'#ff7700';
+  if(inc>=8)return'#ffdd00';
+  return'#44aaff';
+}
+
+function initStreets(){
+  const ctx=document.getElementById('streetsChart').getContext('2d');
+  const sorted=topStreets();
+  streetsChart=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:sorted.map(d=>d.name),
+      datasets:[{
+        data:sorted.map(d=>getInc(d,activeYear)),
+        backgroundColor:sorted.map(d=>streetBgColor(getInc(d,activeYear))),
+        borderColor:sorted.map(d=>streetBorderColor(getInc(d,activeYear))),
+        borderWidth:1,borderRadius:3
+      }]
+    },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:c=>` ${c.parsed.x} incidenti`}}
+      },
+      scales:{
+        x:{ticks:{color:'#778899'},grid:{color:'#1e2230'},beginAtZero:true},
+        y:{ticks:{color:'#ccd',font:{size:11}},grid:{display:false}}
+      }
+    }
+  });
+}
+
+function updateKPI(){
+  let ti=0,tf=0,tm=0,ts=0;
   if(activeYear==='all'){
     YEARS.forEach(y=>{ti+=YEAR_TOTALS[y].inc;tf+=YEAR_TOTALS[y].fer;tm+=YEAR_TOTALS[y].mor});
-    document.getElementById('kpiLabel').textContent='2017–2023';
-    document.getElementById('listLabel').textContent='totale 2017–2023';
+    ts=RAW.filter(d=>d.total_inc>0).length;
   } else {
-    const t=YEAR_TOTALS[activeYear];
-    ti=t.inc;tf=t.fer;tm=t.mor;
-    document.getElementById('kpiLabel').textContent=activeYear;
-    document.getElementById('listLabel').textContent=activeYear;
+    const t=YEAR_TOTALS[activeYear];ti=t.inc;tf=t.fer;tm=t.mor;
+    ts=RAW.filter(d=>(d.years[activeYear]?.inc||0)>0).length;
   }
   document.getElementById('kpiInc').textContent=ti.toLocaleString('it');
   document.getElementById('kpiFer').textContent=tf.toLocaleString('it');
   document.getElementById('kpiMor').textContent=tm;
+  document.getElementById('kpiStr').textContent=ts+' vie';
+}
 
-  // Street list
-  const list=document.getElementById('streetList');
+function updateTrend(){
+  trendChart.data.datasets[0].backgroundColor=barColors(activeYear);
+  trendChart.update();
+}
+
+function updateStreets(){
+  const label=activeYear==='all'?'2017–2023':activeYear;
+  document.getElementById('streetsLabel').textContent=label;
+  const sorted=topStreets();
+  streetsChart.data.labels=sorted.map(d=>d.name);
+  streetsChart.data.datasets[0].data=sorted.map(d=>getInc(d,activeYear));
+  streetsChart.data.datasets[0].backgroundColor=sorted.map(d=>streetBgColor(getInc(d,activeYear)));
+  streetsChart.data.datasets[0].borderColor=sorted.map(d=>streetBorderColor(getInc(d,activeYear)));
+  streetsChart.update();
+}
+
+function updateDeaths(){
+  const label=activeYear==='all'?'2017–2023':activeYear;
+  document.getElementById('deathsLabel').textContent=label;
+  const list=document.getElementById('deathsList');
   list.innerHTML='';
-  const sorted=[...RAW].filter(d=>getInc(d,activeYear)>0).sort((a,b)=>getInc(b,activeYear)-getInc(a,activeYear));
-  const maxI=sorted[0]?getInc(sorted[0],activeYear):1;
-  sorted.forEach(d=>{
-    const inc=getInc(d,activeYear),mor=getMor(d,activeYear);
-    const bw=Math.round((inc/maxI)*90);
+  const withDeaths=[...RAW].filter(d=>getMor(d,activeYear)>0)
+    .sort((a,b)=>getMor(b,activeYear)-getMor(a,activeYear));
+  if(!withDeaths.length){
+    list.innerHTML='<div style="color:#445;font-size:.82rem;padding:10px 0">Nessuna vittima nel periodo selezionato</div>';
+    return;
+  }
+  withDeaths.forEach(d=>{
+    const mor=getMor(d,activeYear);
+    const anni=activeYear==='all'
+      ? YEARS.filter(y=>(d.years[y]?.mor||0)>0).join(', ')
+      : activeYear;
     const el=document.createElement('div');
-    el.className='st-item';
-    el.innerHTML=`<span class="st-name">${d.name}</span><div class="st-right"><div class="bar" style="width:${bw}px;background:${getColor(inc)}"></div><span class="bar-num">${inc}</span>${mor>0?'<span class="skull">💀</span>':''}</div>`;
-    el.addEventListener('click',()=>{
-      const mk=markers.find(mk=>mk.d.name===d.name);
-      if(mk&&getInc(mk.d,activeYear)>0){map.flyTo([mk.d.lat,mk.d.lon],15,{duration:.7});mk.m.openPopup()}
-    });
+    el.className='death-item';
+    el.innerHTML=`<div><div class="death-name">${d.name}</div><div class="death-yr">${anni}</div></div><span class="death-badge">💀 ${mor}</span>`;
     list.appendChild(el);
   });
 }
 
-// TREND CHART (canvas)
-function drawTrend(){
-  const canvas=document.getElementById('trendChart');
-  const ctx=canvas.getContext('2d');
-  canvas.width=canvas.offsetWidth;canvas.height=80;
-  const vals=YEARS.map(y=>YEAR_TOTALS[y].inc);
-  const maxV=Math.max(...vals);
-  const W=canvas.width,H=canvas.height;
-  const pad={l:30,r:8,t:8,b:18};
-  const cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
-  ctx.clearRect(0,0,W,H);
-  // bars
-  const bw=Math.floor(cw/YEARS.length)-4;
-  YEARS.forEach((y,i)=>{
-    const v=vals[i];
-    const x=pad.l+i*(cw/YEARS.length)+2;
-    const bh=Math.round((v/maxV)*ch);
-    const active=activeYear===y;
-    ctx.fillStyle=active?'#5aacff':'#2a5588';
-    ctx.fillRect(x,pad.t+ch-bh,bw,bh);
-    // label year
-    ctx.fillStyle='#556677';ctx.font='9px sans-serif';ctx.textAlign='center';
-    ctx.fillText(y.slice(2),x+bw/2,H-3);
-    // value on active
-    if(active||activeYear==='all'){ctx.fillStyle='#aab';ctx.font='8px sans-serif';ctx.fillText(v,x+bw/2,pad.t+ch-bh-2)}
-  });
-  // y-axis label
-  ctx.fillStyle='#445';ctx.font='8px sans-serif';ctx.textAlign='right';
-  ctx.fillText(maxV,pad.l-2,pad.t+10);
-  ctx.fillText(0,pad.l-2,pad.t+ch);
-}
+function updateAll(){updateKPI();updateTrend();updateStreets();updateDeaths()}
 
-// BUTTONS
+initTrend();
+initStreets();
+updateKPI();
+updateDeaths();
+
 document.querySelectorAll('.yr-btn').forEach(btn=>{
   btn.addEventListener('click',()=>{
     document.querySelectorAll('.yr-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     activeYear=btn.dataset.year;
-    updateMarkers();updateSidebar();drawTrend();
+    updateAll();
   });
 });
-
-// ─── INCROCI PRE-COMPUTATI (da OSM, statici) ────────────────────────────────
-
-// ─── INCROCI TRA STRADE AD ALTO RISCHIO ─────────────────────────────────────
-const INTERSECTIONS = [
-  {lat:43.8529,lon:11.0772,streets:["Via Paronese","Via Roma"]},
-  {lat:43.8911,lon:11.0747,streets:["Via Fabio Filzi","Via Pistoiese"]},
-  {lat:43.8733,lon:11.0907,streets:["Via Marco Roncioni","Via Roma"]},
-  {lat:43.8773,lon:11.0804,streets:["Via Galcianese","Via Marco Roncioni","Via San Giusto"]},
-  {lat:43.883, lon:11.0915,streets:["Via Cavour","Via Pistoiese"]},
-  {lat:43.9047,lon:11.1092,streets:["Via Bologna","Viale Galileo Galilei"]},
-  {lat:43.8756,lon:11.103, streets:["Via Francesco Ferrucci","Via Giuseppe Valentini"]},
-  {lat:43.8629,lon:11.1184,streets:["Via Francesco Ferrucci","Viale Montegrappa"]},
-  {lat:43.8556,lon:11.0698,streets:["Via Paronese","Via Toscana"]},
-  {lat:43.8773,lon:11.0807,streets:["Via Galcianese","Via Marco Roncioni"]},
-  {lat:43.8806,lon:11.089, streets:["Via Cavour","Via Galcianese"]},
-  {lat:43.873, lon:11.1175,streets:["Via Firenze","Viale Borgo Valsugana"]},
-  {lat:43.883, lon:11.0658,streets:["Via Galcianese","Viale Nam Dinh"]},
-  {lat:43.8962,lon:11.0795,streets:["Via Montalese","Viale Fratelli Cervi","Viale Nam Dinh"]},
-  {lat:43.9082,lon:11.1156,streets:["Via Bologna","Viale Fratelli Cervi"]},
-  {lat:43.8964,lon:11.08,  streets:["Via Montalese","Viale Fratelli Cervi"]},
-  {lat:43.8959,lon:11.0791,streets:["Via Montalese","Viale Nam Dinh"]},
-  {lat:43.8983,lon:11.0836,streets:["Via Liliana Rossi","Viale Fratelli Cervi"]}
-];
-
-INTERSECTIONS.forEach(({lat,lon,streets})=>{
-  const r = streets.length>=3?10:7;
-  const nomi = streets.map(s=>`<span style="color:#5aacff">${s}</span>`).join(' × ');
-  const popup = `<b>⚠️ Incrocio tra strade ad alto rischio</b><br>${nomi}`;
-  L.circleMarker([lat,lon],{
-    radius:r, fillColor:'#ffffff', color:'#ff4444',
-    weight:2.5, opacity:1, fillOpacity:0.9
-  }).bindPopup(popup,{maxWidth:270}).addTo(map);
-});
-
-// INIT
-updateMarkers();updateSidebar();
-window.addEventListener('load',drawTrend);
-window.addEventListener('resize',drawTrend);
 </script>
 </body>
 </html>
